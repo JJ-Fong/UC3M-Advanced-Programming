@@ -1,0 +1,8 @@
+"0","#Logistic Regression "
+"0","bin.log.fit = vglm(bin.quality ~ ., family = multinomial(refLevel = 1), training.set.bin)"
+"0","#LDA "
+"0","bin.lda.class <- lda(bin.quality ~ ., training.set.bin)"
+"0","#QDA"
+"0","bin.qda.class <- qda(bin.quality ~ ., training.set.bin)"
+"0","#Naive Bayes"
+"0","bin.nb.class <- naive_bayes(bin.quality ~ ., training.set.bin)"

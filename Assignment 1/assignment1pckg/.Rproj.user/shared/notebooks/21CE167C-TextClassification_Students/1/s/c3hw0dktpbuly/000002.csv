@@ -1,0 +1,6 @@
+"0","trctrl <- trainControl(method = ""none"")"
+"0",""
+"0","X.train = X.train %>% as.matrix() %>% as.data.frame()"
+"0","X.test = X.test %>% as.matrix() %>% as.data.frame()"
+"0","X.train.bin = X.train.bin %>% as.matrix() %>% as.data.frame()"
+"0","X.test.bin = X.test.bin %>% as.matrix() %>% as.data.frame()"

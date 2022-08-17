@@ -1,0 +1,8 @@
+"0",""
+"0","#Graph"
+"0","ggplot("
+"0","  melt(training.set %>% mutate(quality = as.factor(quality)))"
+"0","  , aes(x = value, col = quality)"
+"0",") +"
+"0","  geom_density() +"
+"0","  facet_wrap(~variable, scales = ""free"")"

@@ -1,0 +1,6 @@
+"0","# Wordcloud for spam messages"
+"0","spam <- subset(text, type == ""spam"")"
+"0","wordcloud(spam$text, max.words = 100, random.order = FALSE,"
+"0","          colors=brewer.pal(8, ""Dark2""), main = ""spam"")  "
+"2","transformation drops documents"
+"2","transformation drops documents"

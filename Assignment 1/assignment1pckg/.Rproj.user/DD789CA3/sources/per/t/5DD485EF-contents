@@ -1,0 +1,260 @@
+---
+title: "Course Project: Predicting Wine Quality (Midterm)"
+subtitle: "MS in Statistics for Data Science"
+author: "Javier Fong - 100437994"
+date: 'December, 2021'
+
+output: html_document
+---
+```{r, echo=F, message=F}
+library(dplyr)
+library(ggplot2)
+```
+
+# The dataset 
+
+The dataset *wine-quality-white-and-red.csv* includes the result of physicochemical and sensory tests for the red and white variants of the Portuguese "Vinho Verde" wine. It contains  
+
+It includes the following 13 variables:  
+
+* Categorical
+  + **type**:  Red or White variant. 
+* Continuous
+  + **fixed.acidity**: most acids involved with wine or fixed or nonvolatile (do not evaporate readily)  
+  + **volatile.acidity**: the amount of acetic acid in wine, which at too high of levels can lead to an unpleasant vinegar taste  
+  + **citric.acid**: found in small quantities, citric acid can add 'freshness' and flavor to wines  
+  + **residual.sugar**: the amount of sugar remaining after fermentation stops  
+  + **chloride**: the amount of salt in the wine  
+  + **free.sulfur.dioxide**: the free form of SO2 exists in equilibrium between molecular SO2 (as a dissolved gas) and bisulfite ion; it prevents microbial growth and the oxidation of wine  
+  + **total.sulfur.dioxide**: amount of free and bound forms of S02;  
+  + **density**: the density of wine is close to that of water depending on the percent alcohol and sugar content  
+  + **pH**: describes how acidic or basic a wine is on a scale from 0 (very acidic) to 14 (very basic);  
+  + **sulphates**: a wine additive which can contribute to sulfur dioxide gas (S02) levels, wich acts as an antimicrobial and antioxidant.  
+  + **alcohol**: the percent alcohol content of the wine.   
+  + **quality**: based on sensory data, score between 0 and 10. (Response)
+
+### The goal 
+
+Predict the response variable Quality as a function of the other variables. 
+
+### Descriptive Analysis  
+
+```{r, message=F, warning=F}
+library(tidyverse)
+library(MASS)
+library(caret)
+library(e1071)
+library(tm)
+library(wordcloud)
+library(SnowballC)
+library(naivebayes)
+library(ggplot2)
+library(GGally)
+library(reshape2)
+library(klaR)
+
+
+#Data Upload
+wine.data = read.csv("wine-quality-white-and-red.csv")
+
+#Data Description 
+dim(wine.data)
+str(wine.data)
+wine.data$type = wine.data$type %>% as.factor() %>% as.numeric()
+wine.data$quality = as.factor(wine.data$quality)
+
+#Partition between Training and Test set (Training 80% - Test 20%)
+part.ind = createDataPartition(wine.data$type, p = 0.8, list = F)
+training.set = wine.data[part.ind,]
+test.set = wine.data[-part.ind,]
+
+summary(training.set)
+```
+
+### Visualization 
+
+```{r, message=F, warning=F}
+#Graph Quality Dist
+ggplot(
+  training.set
+  , aes(
+    x = quality
+    )
+) +
+  geom_bar(stat = "count", position = "stack")+
+  geom_text(stat='count', aes(label=..count..), vjust=-1)
+```  
+
+First we check the distribution of the response variable *quality*. We observe that most on the observations of the training set have a score between 5 and 7. The lowest score is 3 and highest is 9. 
+
+
+```{r, message=F, warning=F}
+table(training.set$quality)
+round(prop.table(table(training.set$quality)),4)
+```
+Using the *table* and the *prop.table* command we further check the distribution of our response variable, observing that ~93% of the observations belong to the range of 5 and 7. Leaving out only a ~7% of the values to the rest of scores. 
+
+```{r, message=F, warning=F}
+#Graph
+ggplot(
+  melt(training.set)
+  , aes(
+    y = value
+    , x = quality 
+    , col = quality 
+  )
+) +
+  geom_boxplot() +
+  facet_wrap(~variable, scales = "free")
+
+#Graph
+ggplot(
+  melt(training.set %>% mutate(quality = as.factor(quality)))
+  , aes(x = value, col = quality)
+) +
+  geom_density() +
+  facet_wrap(~variable, scales = "free")
+```  
+
+We used box plots and the density function to check the relationship between each predictor and the response variable. As per the boxplots, it seems that *alcohol* variable has a high correlation with the *quality*. Then in the distribution plots it would seems as if the density of the observations with *quality* = 9 behaves differently, but this might be more due to the fact that we only have 4 observations with this score, out of a population of 5198. It is interesting to see that again, *alcohol* seems to be a variable of interest, given that it show the most variability in its behavior for each quality group. 
+
+```{r}
+summary(training.set)
+```
+
+There seems to not be any missing values in the data set. 
+
+# Classification Models
+
+### Logistic Regression 
+```{r, message=F, warning=F}
+library(VGAM)
+log.fit = vglm(quality ~ ., family = multinomial(refLevel = 1), training.set)
+summary(log.fit)
+```
+
+```{r, message=F, warning=F}
+prob.test = predict(log.fit, newdata=test.set, type="response")
+pred.test = as.factor(levels(wine.data$quality)[max.col(prob.test)])
+head(pred.test)
+
+levels(pred.test) = levels(wine.data$quality)
+confusionMatrix(pred.test, test.set$quality)$table
+confusionMatrix(pred.test, test.set$quality)$overall[1]
+```  
+Using a logistic regression model for classification and the Bayes rule of maximum probability, we get an accuracy of 55%.
+
+### Bayes Classifiers
+
+#### LDA
+```{r, message=F, warning=F}
+lda.class <- lda(quality ~ ., training.set)
+post.prob.lda = predict(lda.class, test.set)$posterior
+pred.lda = predict(lda.class, test.set)$class
+
+n = dim(test.set)[1]
+
+ConfMat.lda = table(pred.lda, test.set$quality)
+ConfMat.lda
+
+error.lda <- (n - sum(diag(ConfMat.lda))) / n
+error.lda
+
+```
+Using a LDA model and the Bayes rule of maximum probability, we get an accuracy of 45%
+
+#### QDA  
+
+As per right now, we cannot use QDA to build a model due to the small size of some of the quality groups. But we'll come back to it later. 
+
+#### Naive Bayes
+```{r, message=F, warning=F}
+nb.class <- naive_bayes(quality ~ ., training.set)
+pred.nb = predict(nb.class, test.set)
+
+n = dim(test.set)[1]
+
+ConfMat.nb = table(pred.nb, test.set$quality)
+ConfMat.nb
+
+error.nb <- sum(diag(ConfMat.nb)) / n
+error.nb
+```
+Using a Naive Bayes model and the Bayes rule of maximum probability, we get an accuracy of 41%. The best so far is the Logistic Regression Model. 
+
+Until this point we've used all the response categories to make prediction, but we might get better results if we were to classify the wines as *"Good Wine"* (with a score equal or higher than 6) and *"Bad Wine"* (with a score lower than six). This would give us better balances classes. We could also note that a *Naive Prediction* at this moment would be to classify everything as *"Good Wine"* (larger class) and that model, would have an accuracy of 63%. 
+
+```{r, message=F, warning=F}
+training.set.bin = training.set %>% 
+  dplyr::mutate(bin.quality = ifelse(quality %in% c("6","7","8","9","10"), "Good Wine", "Bad Wine")) %>% 
+  dplyr::select(-quality)
+
+
+test.set.bin = test.set %>% 
+  dplyr::mutate(bin.quality = ifelse(quality %in% c("6","7","8","9","10"), "Good Wine", "Bad Wine")) %>% 
+  dplyr::select(-quality)
+
+training.set.bin$bin.quality = as.factor(training.set.bin$bin.quality)
+test.set.bin$bin.quality = as.factor(test.set.bin$bin.quality)
+
+table(training.set.bin$bin.quality)  
+prop.table(table(training.set.bin$bin.quality))
+```  
+
+Now we repeat the same models as above to see if the classification improved 
+
+```{r, message=F, warning=F}
+#Logistic Regression 
+bin.log.fit = vglm(bin.quality ~ ., family = multinomial(refLevel = 1), training.set.bin)
+#LDA 
+bin.lda.class <- lda(bin.quality ~ ., training.set.bin)
+#QDA
+bin.qda.class <- qda(bin.quality ~ ., training.set.bin)
+#Naive Bayes
+bin.nb.class <- naive_bayes(bin.quality ~ ., training.set.bin)
+```
+
+Logist Accuracy 
+```{r, message=F, warning=F}
+prob.test = predict(bin.log.fit, newdata=test.set.bin, type="response")
+pred.test = as.factor(levels(training.set.bin$bin.quality)[max.col(prob.test)])
+confusionMatrix(pred.test, test.set.bin$bin.quality)$table
+confusionMatrix(pred.test, test.set.bin$bin.quality)$overall[1]
+```  
+LDA Accuracy 
+```{r, message=F, warning=F}
+prob.test = predict(bin.lda.class, newdata=test.set.bin, type="response")
+pred.test = prob.test$class
+confusionMatrix(pred.test, test.set.bin$bin.quality)$table
+confusionMatrix(pred.test, test.set.bin$bin.quality)$overall[1]
+```  
+QDA Accuracy 
+```{r, message=F, warning=F}
+prob.test = predict(bin.qda.class, newdata=test.set.bin, type="response")
+pred.test = prob.test$class
+confusionMatrix(pred.test, test.set.bin$bin.quality)$table
+confusionMatrix(pred.test, test.set.bin$bin.quality)$overall[1]
+``` 
+Naive Bayes Accuracy
+```{r, message=F, warning=F}
+pred.nb = predict(bin.nb.class, test.set.bin)
+n = dim(test.set.bin)[1]
+
+ConfMat.nb = table(pred.nb, test.set.bin$bin.quality)
+ConfMat.nb
+
+accu.nb <- sum(diag(ConfMat.nb)) / n
+accu.nb
+```
+
+**Logistic regression Accuracy** : 75%
+**LDA Accuracy** : 75%
+**QDA Accuracy** : 74%
+**Naive Bayes Accuracy** : 67%
+
+We improved significantly the accuracy of the models, although we had to used a weaker response variable.   
+  
+The best model so far is the logistc regression model, with an accuracy of 75%. 12% higher than the naive model. 
+
+
+

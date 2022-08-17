@@ -1,0 +1,6 @@
+"0","# Wordcloud for ham messages"
+"0","ham <- subset(text, type != ""spam"")"
+"0","wordcloud(ham$text, max.words = 100, random.order = FALSE,"
+"0","          colors=brewer.pal(8, ""Dark2""), main = ""ham"")"
+"2","transformation drops documents"
+"2","transformation drops documents"

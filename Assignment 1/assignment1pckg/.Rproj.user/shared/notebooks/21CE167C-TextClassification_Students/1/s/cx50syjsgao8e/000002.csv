@@ -1,0 +1,3 @@
+"0","text <- read.delim(""SMSSpamCollection.csv"", sep=""\t"", header=F, colClasses=""character"", quote="""")"
+"0",""
+"0","head(text)"

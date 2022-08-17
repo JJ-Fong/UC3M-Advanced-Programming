@@ -1,0 +1,18 @@
+"0","# choose one of these two:"
+"0","freq_words <- findFreqTerms(X, 40)"
+"0","#X = removeSparseTerms(X, 0.999)"
+"0","#Sparsity - Number of 0 in data set "
+"0","#By removing columns, we biased the data set (remove information) but reduced the varianced of the information. "
+"0",""
+"0","X = X[, freq_words]"
+"0","X"
+"1","<<DocumentTermMatrix (documents: 5574, terms: 218)>>
+"
+"1","Non-/sparse entries: 20540/1194592
+"
+"1","Sparsity           : 98%
+"
+"1","Maximal term length: 8
+"
+"1","Weighting          : term frequency (tf)
+"

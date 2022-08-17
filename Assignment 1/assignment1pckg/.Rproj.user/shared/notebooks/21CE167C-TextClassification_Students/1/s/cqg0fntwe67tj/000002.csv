@@ -1,0 +1,3 @@
+"0","NB.fit <- naiveBayes(as.matrix(X.train), y.train, laplace = 1) # laplace controls smoothing of probabilities"
+"0","NB.pred <- predict(NB.fit, as.matrix(X.test))"
+"0",""

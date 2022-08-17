@@ -1,0 +1,5 @@
+"0","# Global wordcloud"
+"0","wordcloud(text$text, max.words = 100, random.order = FALSE,"
+"0","          colors=brewer.pal(8, ""Dark2""))"
+"2","transformation drops documents"
+"2","transformation drops documents"
